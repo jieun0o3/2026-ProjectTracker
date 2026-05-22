@@ -572,6 +572,43 @@ def analyze_members():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
     
+@app.route('/analyze_github_profile', methods=['POST'])
+def analyze_github_profile():
+    try:
+        data = request.get_json() or {}
+
+        github_url = data.get("github_url")
+        max_repos = data.get("max_repos", 10)
+
+        if not github_url:
+            member = data.get("member", {})
+            github_url = member.get("github_url")
+
+        if not github_url:
+            return jsonify({
+                "status": "error",
+                "message": "github_url이 필요합니다."
+            }), 400
+
+        analyzer = GitHubAnalyzer()
+        result = analyzer.analyze_profile(
+            github_profile_url=github_url,
+            max_repos=max_repos
+        )
+
+        return jsonify({
+            "status": "success",
+            "member": data.get("member", {}),
+            "github_analysis": result,
+            "analysis": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 def save_json(data: Dict[str, Any], output_path: str) -> None:
     with open('../n8n_workflow/member_github_analysis.json', "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

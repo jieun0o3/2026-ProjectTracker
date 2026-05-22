@@ -287,7 +287,9 @@
     : `https://us-central1-${FIREBASE_PROJECT_ID}.cloudfunctions.net`;
 
   const LOCAL_FLASK_URL = 'http://localhost:5000';
-  const N8N_WORKFLOW_URL = 'http://localhost:5678/webhook/project-tracker/init';
+  // const N8N_WORKFLOW_URL = 'http://localhost:5678/webhook/project-tracker/init';
+  // local test용
+  const N8N_WORKFLOW_URL = 'http://localhost:5678/webhook-test/project-tracker/init';
 
   let selectedFile = null;
   let memberCount = 1;
@@ -586,19 +588,43 @@
         throw new Error(`n8n 웹훅 응답 실패 (Status: ${response.status})`);
       }
 
-      // 💡 [유연한 검증 교정 완료] n8n이 가공 안 된 생 데이터를 던져도 강제로 수용합니다.
-      const result = await response.json();
+      // n8n 응답은 이제 JSON이 아니라 Markdown 파일(binary/blob)입니다.
+      const blob = await response.blob();
 
-      if (result) {
-        // n8n 응답 구조에 'role_assignment' 키가 있으면 그걸 쓰고, 없으면 응답받은 데이터 통째로 저장합니다.
-        const finalizedData = result.role_assignment || result;
-        
-        localStorage.setItem('aiWorkflow', JSON.stringify(finalizedData));
-        alert('🎉 AI 역할 분담 및 초기 칸반 보드 생성이 완료되었습니다!');
-        window.location.href = 'dashboard.html';
-      } else {
-        throw new Error('n8n 서버로부터 빈 응답(Null)을 수신했습니다.');
+      if (!blob || blob.size === 0) {
+        throw new Error('n8n 서버로부터 빈 Markdown 파일을 수신했습니다.');
       }
+
+      // 파일명 생성
+      const safeProjectName = (projectTopic || 'project')
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, '-')
+        .slice(0, 60);
+
+      let filename = `${safeProjectName}-flow.md`;
+
+      // n8n에서 Content-Disposition 헤더를 내려주는 경우 파일명 우선 사용
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = decodeURIComponent(match[1]);
+        }
+      }
+
+      // 브라우저에서 바로 다운로드 실행
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+alert('🎉 AI 역할 분담 Markdown 파일이 생성되었습니다.');
 
     } catch (error) {
       console.error('n8n 파이프라인 연동 에러:', error);
