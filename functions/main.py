@@ -4,6 +4,7 @@ from firebase_functions import https_fn, options
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app
 from upstage_parser import process_and_save_document
+from solar_llm import generate_project_workflow
 import json
 
 set_global_options(max_instances=10)
