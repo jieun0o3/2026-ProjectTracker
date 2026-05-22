@@ -199,8 +199,13 @@ def create_ai_workflow(req: https_fn.Request) -> https_fn.Response:
     # Firestore에서 데이터 수집
     # 프론트엔드에서 project_id를 전달받음 (예: ?project_id=project_01)
     project_id = req.args.get("project_id")
+
+    if not project_id and req.is_json:
+        project_id = req.get_json().get("project_id")
+
     if not project_id:
-        return https_fn.Response("project_id 파라미터가 필요합니다.", status=400)
+        print("project_id가 누락되어 기본 테스트 ID(project_01)로 진행합니다.")
+        project_id = "project_01"
 
     try:
         # 특정 project_id에 해당하는 프로젝트 정보 가져오기
@@ -233,7 +238,7 @@ def create_ai_workflow(req: https_fn.Request) -> https_fn.Response:
     # 생성된 워크플로우 결과를 DB에 저장
     doc_ref = db.collection("ai_workflow_context").document()
     doc_ref.set({
-        "project_id": "project_01",
+        "project_id": project_id,
         "workflow_markdown": ai_workflow_result,
         "timestamp": firestore.SERVER_TIMESTAMP
     })
