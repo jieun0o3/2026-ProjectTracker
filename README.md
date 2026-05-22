@@ -1,7 +1,7 @@
 # ProjectTracker
 2026 Low Code Challenge
 
-# TEAM NEXTLV – AI Project Tracker
+## TEAM NEXTLV – AI Project Tracker
 
 <div align="center">
 
