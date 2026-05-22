@@ -200,7 +200,7 @@ def create_ai_workflow(req: https_fn.Request) -> https_fn.Response:
     # 프론트엔드에서 project_id를 전달받음 (예: ?project_id=project_01)
     project_id = req.args.get("project_id")
 
-    if not project_id and req.has_json:
+    if not project_id and req.is_json:
         project_id = req.get_json().get("project_id")
 
     if not project_id:
